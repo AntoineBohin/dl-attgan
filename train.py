@@ -1,17 +1,115 @@
 import os
-import argparse
 import torch
+print(torch.__version__)
 import torch.nn as nn
-import torchvision.transforms as transforms
+import torch.optim as optim
+from torch.utils.data import Dataset, DataLoader
+from torchvision import transforms
 from PIL import Image
-import warnings
-warnings.filterwarnings("ignore")
+import pandas as pd
+import numpy as np
+import torchvision.utils as vutils
 
 ##############################################################################
-# Définition des modules (Encoder, Decoder, Discriminateur/Classifier)
+# 1) Dataset personnalisé (lecture CSV + transformation)
 ##############################################################################
+class CelebADataset(Dataset):
+    """
+    Lit les images et leurs attributs depuis un CSV.
+    On suppose :
+      - img_dir contient les images (ex. "img_align_celeba/")
+      - attr_path est le chemin vers "list_attr_celeba.csv"
+      - chosen_attrs est la liste ordonnée des attributs souhaités.
+    """
+    def __init__(self, img_dir, attr_path, chosen_attrs, transform=None):
+        self.img_dir = img_dir
+        self.transform = transform
+        self.chosen_attrs = chosen_attrs
+
+        # Lecture du CSV
+        df = pd.read_csv(attr_path)
+        # Conversion : -1 devient 0
+        for c in df.columns[1:]:
+            df[c] = (df[c] == 1).astype(int)
+        # Garder uniquement les colonnes utiles
+        self.df_all = df[["image_id"] + chosen_attrs]
+
+    def __len__(self):
+        return len(self.df_all)
+
+    def __getitem__(self, idx):
+        row = self.df_all.iloc[idx]
+        img_name = row["image_id"]
+        img_path = os.path.join(self.img_dir, img_name)
+        image = Image.open(img_path).convert("RGB")
+        if self.transform:
+            image = self.transform(image)
+        attrs = row[self.chosen_attrs].values.astype(np.float32)
+        attrs = torch.from_numpy(attrs)
+        return image, attrs
+
+##############################################################################
+# 2) Paramètres
+##############################################################################
+# À adapter à votre environnement
+root_dir = root_dir = "/usr/users/siapartnerscomsportif/renaud_log/.cache/kagglehub/datasets/jessicali9530/celeba-dataset/versions/2"
+img_dir = os.path.join(root_dir, "img_align_celeba/img_align_celeba")
+attr_path = os.path.join(root_dir, "list_attr_celeba.csv")
+
+# On utilise 5 attributs
+chosen_attrs = [
+    "Blond_Hair",
+    "Bald",
+    "Male",
+    "No_Beard",
+    "Black_Hair",
+]
+
 chosen_attrs=["Young", "Black_Hair", "Male", "Smiling"]
 
+attr_dim = len(chosen_attrs)  # Doit être égal à 5
+
+image_size = 128
+batch_size = 64
+epochs = 50
+
+# Coefficients de perte selon le papier
+lambda_rec = 100  # lambda_1
+lambda_clsg = 10.0   # lambda_2
+lambda_clsc = 1.0    # lambda_3
+
+# Taux d'apprentissage
+lr_disc = 1e-4
+lr_gen  = 2e-4
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+##############################################################################
+# 3) Transformations & DataLoader
+##############################################################################
+transform = transforms.Compose([
+    transforms.Resize((image_size, image_size)),
+    transforms.RandomHorizontalFlip(),
+    transforms.ToTensor(),
+    transforms.Normalize([0.5]*3, [0.5]*3),
+])
+dataset = CelebADataset(img_dir, attr_path, chosen_attrs, transform=transform)
+loader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=4)
+
+##############################################################################
+# 4) Définition des modules (Encoder, Decoder, Discriminateur/Classifier)
+##############################################################################
+def weights_init(m):
+    classname = m.__class__.__name__
+    if "Conv" in classname:
+        nn.init.normal_(m.weight.data, 0.0, 0.02)
+        if m.bias is not None:
+            nn.init.constant_(m.bias.data, 0)
+    elif "BatchNorm" in classname:
+        nn.init.normal_(m.weight.data, 1.0, 0.02)
+        nn.init.constant_(m.bias.data, 0)
+
+# --- Encoder ---
 class Encoder(nn.Module):
     def __init__(self, input_dim=3):
         super(Encoder, self).__init__()
@@ -40,32 +138,32 @@ class Decoder(nn.Module):
         super(Decoder, self).__init__()
         # La couche 1 reçoit le tenseur latent concaténé avec les attributs tilés à 4x4
         self.deconv1 = nn.ConvTranspose2d(1024 + attr_dim, 512, kernel_size=4, stride=2, padding=1)   # sort : (N, 512, 8, 8)
-        
+
         # Pour la couche 2, on injecte :
         # - la sortie de la couche précédente (512 canaux)
         # - un tile des attributs à la résolution 8x8 (attr_dim canaux)
         # - le skip correspondant (skips[3] de 512 canaux)
         # Soit en tout : 512 + attr_dim + 512 = 1024 + attr_dim canaux
         self.deconv2 = nn.ConvTranspose2d(1024 + attr_dim, 256, kernel_size=4, stride=2, padding=1)   # sort : (N, 256, 16, 16)
-        
+
         # Pour la couche 3, entrée = 256 (deconv2) + attr_dim (à 16x16) + 256 (skips[2]) = 512 + attr_dim
         self.deconv3 = nn.ConvTranspose2d(512 + attr_dim, 128, kernel_size=4, stride=2, padding=1)    # sort : (N, 128, 32, 32)
-        
+
         # Pour la couche 4, entrée = 128 (deconv3) + attr_dim (à 32x32) + 128 (skips[1]) = 256 + attr_dim
         self.deconv4 = nn.ConvTranspose2d(256 + attr_dim, 64, kernel_size=4, stride=2, padding=1)     # sort : (N, 64, 64, 64)
-        
+
         # Pour la couche 5, entrée = 64 (deconv4) + attr_dim (à 64x64) + 64 (skips[0]) = 128 + attr_dim
         self.deconv5 = nn.ConvTranspose2d(128 + attr_dim, output_dim, kernel_size=4, stride=2, padding=1)  # sort : (N, output_dim, 128, 128)
-        
+
         # BatchNorm sur les sorties intermédiaires
         self.bn1 = nn.BatchNorm2d(512)
         self.bn2 = nn.BatchNorm2d(256)
         self.bn3 = nn.BatchNorm2d(128)
         self.bn4 = nn.BatchNorm2d(64)
-        
+
         self.relu = nn.ReLU(inplace=True)
         self.tanh = nn.Tanh()
-    
+
     def forward(self, latent, attrs, skips):
         """
         latent : (N, 1024, 4, 4)
@@ -81,7 +179,7 @@ class Decoder(nn.Module):
         a_tile = attrs.view(attrs.size(0), -1, 1, 1).expand(-1, -1, 4, 4)
         x = torch.cat([latent, a_tile], dim=1)  # (N, 1024 + attr_dim, 4, 4)
         x = self.relu(self.bn1(self.deconv1(x)))  # (N, 512, 8, 8)
-        
+
         # Étape 2 : avant de passer à deconv2, on concatène :
         # - la sortie précédente x (512 canaux)
         # - les attributs tilés à 8x8 (attr_dim canaux)
@@ -89,23 +187,25 @@ class Decoder(nn.Module):
         a_tile = attrs.view(attrs.size(0), -1, 1, 1).expand(-1, -1, 8, 8)
         x = torch.cat([x, a_tile, skips[3]], dim=1)  # (N, 512 + attr_dim + 512 = 1024 + attr_dim, 8, 8)
         x = self.relu(self.bn2(self.deconv2(x)))       # (N, 256, 16, 16)
-        
+
         # Étape 3 : injection à la résolution 16x16
         a_tile = attrs.view(attrs.size(0), -1, 1, 1).expand(-1, -1, 16, 16)
         x = torch.cat([x, a_tile, skips[2]], dim=1)      # (N, 256 + attr_dim + 256 = 512 + attr_dim, 16, 16)
         x = self.relu(self.bn3(self.deconv3(x)))         # (N, 128, 32, 32)
-        
+
         # Étape 4 : injection à la résolution 32x32
         a_tile = attrs.view(attrs.size(0), -1, 1, 1).expand(-1, -1, 32, 32)
         x = torch.cat([x, a_tile, skips[1]], dim=1)      # (N, 128 + attr_dim + 128 = 256 + attr_dim, 32, 32)
         x = self.relu(self.bn4(self.deconv4(x)))         # (N, 64, 64, 64)
-        
+
         # Étape 5 : injection à la résolution 64x64
         a_tile = attrs.view(attrs.size(0), -1, 1, 1).expand(-1, -1, 64, 64)
         x = torch.cat([x, a_tile, skips[0]], dim=1)      # (N, 64 + attr_dim + 64 = 128 + attr_dim, 64, 64)
         x = self.deconv5(x)                              # (N, output_dim, 128, 128)
+
         return self.tanh(x)
-    
+
+
 # --- Discriminateur / Classifieur ---
 class ClassifierDiscriminator(nn.Module):
     def __init__(self, input_dim=3, attr_dim=5):
@@ -132,124 +232,112 @@ class ClassifierDiscriminator(nn.Module):
         return attr_preds, real_fake_score
 
 ##############################################################################
-# Script principal
+# 5) Initialisation des modèles & Optimiseurs
 ##############################################################################
-def main():
-    input = "rousse.png"
-    output = "./rousse_output.png"
-    modify = "Male=1"
+encoder = Encoder(input_dim=3).to(device)
+decoder = Decoder(output_dim=3, attr_dim=attr_dim).to(device)
+classifier_discriminator = ClassifierDiscriminator(input_dim=3, attr_dim=attr_dim).to(device)
 
-    # Configuration du device
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+encoder.apply(weights_init)
+decoder.apply(weights_init)
+classifier_discriminator.apply(weights_init)
 
-    # Liste des attributs tels qu'utilisés à l'entraînement (l'ordre doit être respecté)
-    attr_dim = len(chosen_attrs)
+opt_enc = optim.Adam(encoder.parameters(), lr=lr_gen, betas=(0.5, 0.999))
+opt_dec = optim.Adam(decoder.parameters(), lr=lr_gen, betas=(0.5, 0.999))
+opt_disc = optim.Adam(classifier_discriminator.parameters(), lr=lr_disc, betas=(0.5, 0.999))
 
-    # Chargement des modèles pré-entraînés
-    encoder = Encoder(input_dim=3).to(device)
-    decoder = Decoder(output_dim=3, attr_dim=attr_dim).to(device)
-    encoder_path = os.path.join("saved_models", "encoder.pth")
-    decoder_path = os.path.join("saved_models", "decoder.pth")
-    encoder.load_state_dict(torch.load(encoder_path, map_location=device))
-    decoder.load_state_dict(torch.load(decoder_path, map_location=device))
-    encoder.eval()
-    decoder.eval()
+# Critères de perte
+criterion_adv = nn.BCEWithLogitsLoss()
+criterion_cls = nn.BCEWithLogitsLoss()  # Pour la classification
+criterion_rec = nn.L1Loss()             # Pour la reconstruction
 
-    # Optionnel : charger le modèle de classification pour récupérer les attributs originaux
-    use_classifier = True
-    try:
-        classifier = ClassifierDiscriminator(input_dim=3, attr_dim=attr_dim).to(device)
-        classifier_path = os.path.join("saved_models", "classifier_discriminator.pth")
-        classifier.load_state_dict(torch.load(classifier_path, map_location=device))
-        classifier.eval()
-    except Exception as e:
-        print("Erreur lors du chargement du classifier :", e)
-        print("Utilisation d'un vecteur d'attributs par défaut.")
-        use_classifier = False
+##############################################################################
+# 6) Boucle d'entraînement
+##############################################################################
+for epoch in range(epochs):
+    for i, (images, real_attrs) in enumerate(loader):
+        images = images.to(device)         # (N, 3, 128, 128)
+        real_attrs = real_attrs.to(device)   # (N, 5)
+        cur_batch = images.size(0)
 
-    # Transformation de l'image d'entrée
-    transform = transforms.Compose([
-        transforms.Resize((128, 128)),
-        transforms.ToTensor(),
-        transforms.Normalize([0.5]*3, [0.5]*3),
-    ])
+        # --- Création du vecteur d'attributs manipulé ---
+        # Pour chaque image, on choisit un nombre k aléatoire (entre 1 et 5)
+        # et on flip les k premiers indices d'une permutation aléatoire
+        manipulated_attrs = real_attrs.clone()
+        for idx in range(cur_batch):
+            k = torch.randint(1, attr_dim + 1, (1,)).item()  # nombre d'attributs à changer
+            perm = torch.randperm(attr_dim, device=device)
+            flip_idx = perm[:k]
+            manipulated_attrs[idx, flip_idx] = 1 - manipulated_attrs[idx, flip_idx]
 
-    # Charger l'image d'entrée
-    image = Image.open(input).convert("RGB")
-    input_tensor = transform(image).unsqueeze(0).to(device)
 
-    # Récupération (ou définition) du vecteur d'attributs
-    if use_classifier:
+        # ------------- Entraînement du Discriminateur -------------
+        # On ne considère ici que la branche d'édition pour l'adversarial.
         with torch.no_grad():
-            preds, _ = classifier(input_tensor)
-            preds = torch.sigmoid(preds)
-            # Binarisation avec seuil 0.5
-            attr_vector = (preds > 0.5).float()
-    else:
-        # Vecteur par défaut (tous à 0)
-        attr_vector = torch.zeros((1, attr_dim), device=device)
+            latent, skips = encoder(images)
+            fake_recon_images = decoder(latent, real_attrs, skips)   # branche reconstruction (pour L_rec)
+            fake_edit_images  = decoder(latent, manipulated_attrs, skips)  # branche édition
 
-    # Analyse de la chaîne de modifications (ex: "Bald=1,Smiling=0")
-    modifications = {}
-    if modify:
-        for pair in modify.split(","):
-            if "=" in pair:
-                attr, val = pair.split("=")
-                attr = attr.strip()
-                try:
-                    val = float(val.strip())
-                except ValueError:
-                    print(f"Valeur non valide pour {attr}, utilisation de 0")
-                    val = 0.0
-                modifications[attr] = val
-    print(modifications)
+        # Prédictions sur images réelles
+        real_attr_preds, real_scores = classifier_discriminator(images)
+        # Prédictions sur images éditées (fake)
+        _, fake_edit_scores = classifier_discriminator(fake_edit_images.detach())
 
-    # Appliquer les modifications au vecteur d'attributs
-    for attr, val in modifications.items():
-        if attr in chosen_attrs:
-            idx = chosen_attrs.index(attr)
-            attr_vector[0, idx] = val
-        else:
-            print(f"Attribut '{attr}' inconnu. Doit être dans : {chosen_attrs}")
-    print(f"attributs demandé: {attr_vector}")
+        # Labels (avec label smoothing)
+        real_labels = 0.9 * torch.ones(cur_batch, 1, device=device)
+        fake_labels = 0.1 * torch.ones(cur_batch, 1, device=device)
 
-    # Génération de l'image modifiée
-    with torch.no_grad():
-        latent, skips = encoder(input_tensor)
-        output_tensor = decoder(latent, attr_vector, skips)
+        # Perte adversariale pour le discriminateur
+        L_adv_D = criterion_adv(real_scores, real_labels) + criterion_adv(fake_edit_scores, fake_labels)
+        # Perte de classification sur images réelles
+        L_clsc = criterion_cls(real_attr_preds, real_attrs)
+        # Selon le papier : L_disc = L_adv^D + lambda3 * L_clsc, avec lambda3 = 1
+        loss_disc = L_adv_D + lambda_clsc * L_clsc
 
-    # Denormalisation (les sorties sont dans [-1, 1])
-    output_tensor = (output_tensor.clamp(-1, 1) + 1) / 2.0
-    logits, _ = classifier(output_tensor)
-    probs = torch.sigmoid(logits)
-    attr_vector_modified = (probs > 0.5).float()
-    print(f"logits de prediction sur limage modifié {logits}")
-    print(f"attrs_vector modifier{attr_vector_modified}")
-    output_image = transforms.ToPILImage()(output_tensor.squeeze(0).cpu())
-    output_image.save(output)
-    
-    # Transformation de l'image d'entrée
-    transform = transforms.Compose([
-        transforms.Resize((128, 128)),
-        transforms.ToTensor(),
-        transforms.Normalize([0.5]*3, [0.5]*3),
-    ])
+        opt_disc.zero_grad()
+        loss_disc.backward()
+        opt_disc.step()
 
-    # Charger l'image d'entrée
-    image = Image.open(input).convert("RGB")
-    input_tensor = transform(image).unsqueeze(0).to(device)
+        # ------------- Entraînement du Générateur (Encoder + Decoder) -------------
+        latent, skips = encoder(images)
+        fake_recon_images = decoder(latent, real_attrs, skips)   # branche reconstruction (pour L_rec)
+        fake_edit_images  = decoder(latent, manipulated_attrs, skips)  # branche édition
+        # Pour la reconstruction, comparer fake_recon_images à images
+        L_rec = criterion_rec(fake_recon_images, images)
+        # Pour la classification (édition), comparer les prédictions des fake_edit_images aux attributs manipulés
+        fake_edit_attr_preds, fake_edit_scores = classifier_discriminator(fake_edit_images)
+        L_clsg = criterion_cls(fake_edit_attr_preds, manipulated_attrs)
+        # Perte adversariale pour que fake_edit_images soient considérées comme réelles
+        L_adv_G = criterion_adv(fake_edit_scores, real_labels)
+        # Selon le papier : L_gen = lambda1 * L_rec + lambda2 * L_clsg + L_adv^G
+        loss_gen = L_rec + 10*L_clsg + 100*L_adv_G
 
-    # Récupérer le vecteur d'attribut original en utilisant le classifieur (si disponible)
-    if use_classifier:
-        with torch.no_grad():
-            logits, _ = classifier(input_tensor)
-            probs = torch.sigmoid(logits)
-            original_attr_vector = (probs > 0.5).float()
-        print("Vecteur d'attribut de base :", original_attr_vector)
-    else:
-        original_attr_vector = torch.zeros((1, attr_dim), device=device)
+        opt_enc.zero_grad()
+        opt_dec.zero_grad()
+        loss_gen.backward()
+        opt_enc.step()
+        opt_dec.step()
 
+        # Affichage périodique des logs
+        if (i + 1) % 1000 == 0:
+            print(f"[Epoch {epoch+1}/{epochs}] Step {i+1}/{len(loader)} | "
+                  f"L_disc: {loss_disc.item():.4f} | L_gen: {loss_gen.item():.4f} | "
+                  f"L_rec: {L_rec.item():.4f} | L_clsg: {L_clsg.item():.4f} | "
+                  f"L_adv_G: {L_adv_G.item():.4f} | L_clsc: {L_clsc.item():.4f}")
+    vutils.save_image(fake_edit_images, f"test_debug_epoch_{epoch}.png", normalize=True)
+    vutils.save_image(fake_recon_images, f"test_debug_epoch_same_attribute{epoch}.png", normalize=True)
+    vutils.save_image(images, f"test_debug_epoch_true_images{epoch}.png", normalize=True)
 
+##############################################################################
+# 7) Sauvegarde des modèles
+##############################################################################
+save_dir = "./saved_models"
+os.makedirs(save_dir, exist_ok=True)
+torch.save(encoder.state_dict(), os.path.join(save_dir, "encoder.pth"))
+torch.save(decoder.state_dict(), os.path.join(save_dir, "decoder.pth"))
+torch.save(classifier_discriminator.state_dict(), os.path.join(save_dir, "classifier_discriminator.pth"))
+torch.save(opt_enc.state_dict(), os.path.join(save_dir, "opt_enc.pth"))
+torch.save(opt_dec.state_dict(), os.path.join(save_dir, "opt_dec.pth"))
+torch.save(opt_disc.state_dict(), os.path.join(save_dir, "opt_disc.pth"))
 
-if __name__ == "__main__":
-    main()
+print("Entraînement terminé, modèles sauvegardés avec succès !")
