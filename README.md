@@ -9,6 +9,9 @@ With the lack of suitable labeled datasets, current approaches rely on generativ
 [AttGAN](https://arxiv.org/abs/1711.10678) (Attribute Generative Adversarial Network) introduces an improved framework, leveraging an encoder-decoder structure combined with attribute classification constraints, reconstruction learning and adversarial learning at training. It results in more realistic facial transformations, better retention of details and a more flexible model that can handle multiple attributes simultaneously with a single implementation.
 
 ## Model Architecture
+
+### Principles
+
 AttGAN is built upon an encoder-decoder architecture:
 ![](model_overview.png)
 
@@ -17,11 +20,16 @@ The model is combined with additional components used during training to learn h
 2) Reconstruction Learning: Aims at preserving the attribute-excluding details. If an image is passed without modification, it should be perfectly reconstructed.
 3) Adversarial Learning: Employed for visually realistic generation. A Wasserstein GAN with Gradient Penalty (WGAN-GP) ensures that the generated images look realistic and indistinguishable from real pictures.
 
+### Implementation
+Our AttGAN implementation presents the following default architecture, consisting of :
+- 5 convolutional layers for the encoder.
+- 5 transposed convolutional layers	for the decoder to reconstruct the modified image.
+- A discriminator based on a CNN with a dual output: one branch for real/fake classification, another branch for multi-label attribute prediction.
 
+Attribute injection is performed by concatenating the attribute vector with the encoded feature map before decoding. The attributes, represented as a binary vector (e.g., “smiling” = 1, “beard” = 0), are first reshaped and broadcasted to match the spatial dimensions of the feature map. This injection can occur once at the bottleneck or at multiple decoder layers, by playing on the "inject_layers" parameter.
 
- Unlike previous approaches that impose constraints on the latent space, AttGAN applies an attribute classification constraint on the generated image, ensuring that only the desired attributes are modified while keeping the identity and other characteristics intact.
+The model also presents shortcut connections, inspired by U-Net to help preserve fine details during image reconstruction. They link encoder and decoder layers, allowing high-level features from the input image to be skipped over the latent space and reused in the decoder. The number of skipping connections can be modified with the "shortcut_layers" parameters.
 
-Our implementation reproduces the AttGAN model as described in the original paper, enabling the generation of realistic and high-quality face modifications. We trained and tested the model on facial images to evaluate its effectiveness.
 
 
 1) telecharge le dataset avec download_dataset
