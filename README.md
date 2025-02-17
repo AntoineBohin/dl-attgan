@@ -21,6 +21,9 @@ The model is combined with additional components used during training to learn h
 3) Adversarial Learning: Employed for visually realistic generation. A Wasserstein GAN with Gradient Penalty (WGAN-GP) ensures that the generated images look realistic and indistinguishable from real pictures.
 
 ### Implementation
+
+![](architecture.png)
+
 Our AttGAN implementation presents the following default architecture, consisting of :
 - 5 convolutional layers for the encoder.
 - 5 transposed convolutional layers	for the decoder to reconstruct the modified image.
