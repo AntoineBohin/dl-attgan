@@ -10,9 +10,9 @@ With the lack of suitable labeled datasets, current approaches rely on generativ
 
 ## Model Architecture
 AttGAN is built upon an encoder-decoder architecture and integrates three key learning objectives:
-	1.	Attribute Classification Constraint: Ensures the generated images have the desired attributes by training a classifier to verify attribute modifications.
-	2.	Reconstruction Learning: Preserves all attribute-excluding details, ensuring that only the specified attributes change.
-	3.	Adversarial Learning: Uses a Wasserstein GAN with Gradient Penalty (WGAN-GP) to generate visually realistic face images.
+1) Attribute Classification Constraint: Ensures the generated images have the desired attributes by training a classifier to verify attribute modifications.
+2) Reconstruction Learning: Preserves all attribute-excluding details, ensuring that only the specified attributes change.
+3) Adversarial Learning: Uses a Wasserstein GAN with Gradient Penalty (WGAN-GP) to generate visually realistic face images.
 
 
 
