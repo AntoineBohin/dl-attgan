@@ -8,8 +8,11 @@ With the lack of suitable labeled datasets, current approaches rely on generativ
 
 [AttGAN](https://arxiv.org/abs/1711.10678) (Attribute Generative Adversarial Network) introduces an improved framework, leveraging an encoder-decoder structure combined with attribute classification constraints, reconstruction learning and adversarial learning at training. It results in more realistic facial transformations, better retention of details and a more flexible model that can handle multiple attributes simultaneously with a single implementation.
 
-
-
+## Model Architecture
+AttGAN is built upon an encoder-decoder architecture and integrates three key learning objectives:
+	1.	Attribute Classification Constraint: Ensures the generated images have the desired attributes by training a classifier to verify attribute modifications.
+	2.	Reconstruction Learning: Preserves all attribute-excluding details, ensuring that only the specified attributes change.
+	3.	Adversarial Learning: Uses a Wasserstein GAN with Gradient Penalty (WGAN-GP) to generate visually realistic face images.
 
 
 
