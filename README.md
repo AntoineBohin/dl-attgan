@@ -34,7 +34,3 @@ Attribute injection is performed by concatenating the attribute vector with the 
 The model also presents shortcut connections, inspired by U-Net to help preserve fine details during image reconstruction. They link encoder and decoder layers, allowing high-level features from the input image to be skipped over the latent space and reused in the decoder. The number of skipping connections can be modified with the "shortcut_layers" parameters.
 
 
-
-1) telecharge le dataset avec download_dataset
-2) entraine le modèle avec train.py, ca sauvegardera le modèle quelque part. C'est la qu'il faut changer les hyperparamètres
-3) Le tester en inférence avec test.py
