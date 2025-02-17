@@ -14,7 +14,7 @@ AttGAN is built upon an encoder-decoder architecture and integrates three key le
 2) Reconstruction Learning: Aims at preserving the attribute-excluding details. If an image is passed without modification, it should be perfectly reconstructed.
 3) Adversarial Learning: Employed for visually realistic generation. A Wasserstein GAN with Gradient Penalty (WGAN-GP) ensures that the generated images look realistic and indistinguishable from real pictures.
 
-
+![](model_overview.png)
 
  Unlike previous approaches that impose constraints on the latent space, AttGAN applies an attribute classification constraint on the generated image, ensuring that only the desired attributes are modified while keeping the identity and other characteristics intact.
 
