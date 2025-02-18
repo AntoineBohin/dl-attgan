@@ -1,6 +1,6 @@
 # AttGAN: Facial Attribute Editing by Only Changing What You Want
-This project is an implementation of [AttGAN: Facial Attribute Editing by Only Changing What You Want](https://arxiv.org/abs/1711.10678), a deep learning model for facial attribute editing. 
-
+## Authors: Antoine Bohin and Logan Renaud
+This project by Antoine Bohin and Logan Renaudis an implementation of [AttGAN: Facial Attribute Editing by Only Changing What You Want](https://arxiv.org/abs/1711.10678), a deep learning model for facial attribute editing. 
 
 ## Introduction
 Facial attribute editing aims to edit attributes of interest (e.g. hair color, accessories, mouth) on a face image while preserving the identity of the person. It has applications in various industries, like entertainment and media generation (e.g. deepfakes, face manipulation in films or photo shooting), but also plastic surgery or security. 
