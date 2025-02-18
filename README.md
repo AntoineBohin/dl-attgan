@@ -1,6 +1,7 @@
 # AttGAN: Facial Attribute Editing by Only Changing What You Want
-## Authors: Antoine Bohin and Logan Renaud
-## Course: Deep Learning - ENS MVA / CentraleSupélec
+## Authors: Antoine Bohin and Logan Renaud /
+Course: Deep Learning - ENS MVA / CentraleSupélec
+## 
 This project by Antoine Bohin and Logan Renaud is an implementation of [AttGAN: Facial Attribute Editing by Only Changing What You Want](https://arxiv.org/abs/1711.10678), a deep learning model for facial attribute editing. 
 
 ## Introduction
