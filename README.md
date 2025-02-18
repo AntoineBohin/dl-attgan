@@ -76,7 +76,7 @@ If you want to use test images from CelebA Dataset, you can type :
 python3 test.py --experiment_name full_training --gpu
 ```
 
-If you want to use custom images, add it in the `./data/custom` folder with a file `list_attr_custom.txt` describing the original attributes of the image (see examples):
+If you want to use custom images (need to be cropped as square), add it in the `./data/custom` folder with a file `list_attr_custom.txt` describing the original attributes of the image (see examples):
  ```bash
 python3 test.py --custom_img --experiment_name full_training --gpu
 ```
