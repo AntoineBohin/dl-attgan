@@ -46,3 +46,12 @@ python3 download_data.py
 ```
 Images will be placed in `./data/img_align_celeba/*.jpg`, and attribute labels in `./data/list_attr_celeba.csv`
 
+## Model Training
+
+A model can be retrained from scratch on the CelebA Dataset using the following command:
+```bash
+python3 train.py --experiment_name your_training --gpu
+```
+Although we decided to reuse the same default hyperparameters as the paper, they can be changed by specifying them in the previous command (see the python file for the exact syntax)
+
+Note: A good GPU is recommended. We trained the model using CentraleSupélec Metz DCE, and training time varied from ∼15 min/epoch for a 24 GB RAM GPU to ∼25 min/epoch for a 11 GB RAM GPU.
