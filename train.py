@@ -6,12 +6,14 @@ from os.path import join
 
 import torch.utils.data as data
 
+import torch.utils.data as data
 import torch
 import torchvision.utils as vutils
-from model_github import AttGAN
-from dataset import check_attribute_conflict, CelebA
-from helpers import Progressbar, add_scalar_dict
 from tensorboardX import SummaryWriter
+
+from src.model import AttGAN
+from src.dataset import check_attribute_conflict, CelebA
+from src.utils import Progressbar, add_scalar_dict
 
 
 DEFAULT_ATTRIBUTES = ['Bald', 'Black_Hair', 'Blond_Hair', 'Brown_Hair', 'Bushy_Eyebrows',
