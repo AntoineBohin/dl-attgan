@@ -2,7 +2,7 @@
 
 import torch
 import torch.nn as nn
-from nn import LinearBlock, Conv2dBlock, ConvTranspose2dBlock
+from network import LinearBlock, Conv2dBlock, ConvTranspose2dBlock
 from torchsummary import summary
 import torch.autograd as autograd
 import torch.nn.functional as F
