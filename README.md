@@ -71,6 +71,11 @@ Note: A good GPU is recommended. We trained the model using CentraleSupélec Met
 
 ## Model Testing
 
+### Pre-trained model loading
+We pre-trained a model during a training of 45 epochs (c.20h). The weights of the model can be downloaded using this [link]([https://arxiv.org/abs/1711.10678](https://drive.google.com/drive/folders/1rQsXRjN6ZPMtKgkicsPUNXE_8ZtO0UyM?usp=share_link)
+Download the folder "full_training" and put it in the `output` folder. The weights of the model will then be in the file `output/full_training/checkpoint/weights.44.pth` and the settings of the training in `output/full_training/setting.txt`.
+
+
 ### Single attribute editing
 
 The following commands will test the single attribute editing for every attribute the model was trained on. If you are using our model/default parameters, the attributes are (left to right) : 
