@@ -83,6 +83,6 @@ Here are some results we obtained :
 We also implemented the possibility to edit the intensity of an attribute. 
 
  ```bash
-python3 test_intensity.py --test_att Smiling --test_int_min -1.0 --test_int_max 1.0 --n_slide 10 --gpu
+python3 test_intensity.py --experiment_name test_full_training --test_att Male --gpu
 ```
 
