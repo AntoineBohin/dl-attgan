@@ -1,5 +1,3 @@
-"""AttGAN, generator, and discriminator."""
-
 import torch
 import torch.nn as nn
 from network import LinearBlock, Conv2dBlock, ConvTranspose2dBlock
