@@ -10,8 +10,7 @@ With the lack of suitable labeled datasets, current approaches rely on generativ
 [AttGAN](https://arxiv.org/abs/1711.10678) (Attribute Generative Adversarial Network) introduces an improved framework, leveraging an encoder-decoder structure combined with attribute classification constraints, reconstruction learning and adversarial learning at training. It results in more realistic facial transformations, better retention of details and a more flexible model that can handle multiple attributes simultaneously with a single implementation.
 
 Our custom implementation gave the following results:
-![](batch_examples_1.png)
-![](batch_examples_2.png)
+![](images/results_single_/single_3.jpg)
 
 ## Model Architecture
 
@@ -40,7 +39,7 @@ The model also presents shortcut connections, inspired by U-Net to help preserve
 
 ### Intensity Control
 We explored the model’s capability to generalize beyond binary attribute values and use continuous intensity levels for attribute editing. While AttGAN is originally trained with discrete 0/1 labels, we observed that it can naturally handle gradual attribute modifications during testing, without requiring any architectural changes.
-![](intensity_batch_example_1.png)
+![](images/results_intensity_/intensity_smiling_2.jpg)
 
 ## Requirements
 
@@ -83,6 +82,8 @@ python3 test.py --custom_img --experiment_name full_training --gpu
 ```
 
 Here are some results we obtained :
+![](images/results_single_/single_1.jpg)
+![](images/results_single_/single_4.jpg)
 
 ### Attribute intensity editing
 
@@ -92,6 +93,10 @@ You can test this functionality using the provided script. It generates a series
  ```bash
 python3 test_intensity.py --experiment_name test_full_training --test_att Male --gpu
 ```
+
+![](images/results_intensity_/intensity_beard_1.jpg)
+
+![](images/results_intensity_/intensity_young_1.jpg)
 
 ![](intensity_batch_example_2.png)
 
