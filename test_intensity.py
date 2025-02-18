@@ -7,9 +7,9 @@ import torch
 import torch.utils.data as data
 import torchvision.utils as vutils
 
-from model_github import AttGAN
-from dataset import CelebA, CustomDataset, check_attribute_conflict
-from helpers import Progressbar, find_model
+from src.model import AttGAN
+from src.dataset import CelebA, CustomDataset, check_attribute_conflict
+from src.utils import Progressbar, find_model
 
 def parse(args=None):
     parser = argparse.ArgumentParser()
