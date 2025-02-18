@@ -85,8 +85,9 @@ Here are some results we obtained :
 
 ### Attribute intensity editing
 
-We also implemented the possibility to edit the intensity of an attribute. 
+We have also implemented intensity control for attribute editing, allowing for smooth transitions between different attribute intensities. This feature enables fine-grained control over attributes such as smiling intensity, hair color strength, or eyeglasses visibility, rather than applying a binary transformation.
 
+You can test this functionality using the provided script. It generates a series of images where the selected attribute is gradually adjusted from a minimum intensity (--test_int_min) to a maximum intensity (--test_int_max) across multiple steps (--n_slide):
  ```bash
 python3 test_intensity.py --experiment_name test_full_training --test_att Male --gpu
 ```
