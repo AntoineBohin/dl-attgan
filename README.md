@@ -17,7 +17,7 @@ Our custom implementation gave the following results:
 ### Principles
 
 AttGAN is built upon an encoder-decoder architecture:
-![](model_overview.png)
+![](images/model_overview.png)
 
 The model is combined with additional components used during training to learn how to generate realistic and precise edits: 
 1) Attribute Classification Constraint: A pre-trained Attribute Classifier is used to check whether the attributes in the output image match the desired ones.
@@ -26,7 +26,7 @@ The model is combined with additional components used during training to learn h
 
 ### Implementation
 
-![](architecture.png)
+![](images/architecture.png)
 
 Our AttGAN implementation presents the following default architecture, consisting of :
 - 5 convolutional layers for the encoder.
