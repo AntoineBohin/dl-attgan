@@ -33,4 +33,16 @@ Attribute injection is performed by concatenating the attribute vector with the 
 
 The model also presents shortcut connections, inspired by U-Net to help preserve fine details during image reconstruction. They link encoder and decoder layers, allowing high-level features from the input image to be skipped over the latent space and reused in the decoder. The number of skipping connections can be modified with the "shortcut_layers" parameters.
 
+## Requirements
+
+Type the following command to install the required modules:
+```bash
+pip install -r requirements.txt
+```
+
+If you want to retrain the model, you'll also need to download the CelebA Dataset. You can modify the path for the dataset in the `download_data.py` file, and then execute the command:
+```bash
+python3 download_data.py
+```
+Images will be placed in `./data/img_align_celeba/*.jpg`, and attribute labels in `./data/list_attr_celeba.csv`
 
