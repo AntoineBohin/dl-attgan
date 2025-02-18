@@ -8,6 +8,9 @@ With the lack of suitable labeled datasets, current approaches rely on generativ
 
 [AttGAN](https://arxiv.org/abs/1711.10678) (Attribute Generative Adversarial Network) introduces an improved framework, leveraging an encoder-decoder structure combined with attribute classification constraints, reconstruction learning and adversarial learning at training. It results in more realistic facial transformations, better retention of details and a more flexible model that can handle multiple attributes simultaneously with a single implementation.
 
+Our custom implementation gave the following results:
+
+
 ## Model Architecture
 
 ### Principles
@@ -29,7 +32,7 @@ Our AttGAN implementation presents the following default architecture, consistin
 - 5 transposed convolutional layers	for the decoder to reconstruct the modified image.
 - A discriminator based on a CNN with a dual output: one branch for real/fake classification, another branch for multi-label attribute prediction.
 
-Attribute injection is performed by concatenating the attribute vector with the encoded feature map before decoding. The attributes, represented as a binary vector (e.g., “smiling” = 1, “beard” = 0), are first reshaped and broadcasted to match the spatial dimensions of the feature map. This injection can occur once at the bottleneck or at multiple decoder layers, by playing on the "inject_layers" parameter.
+The model was only trained on a subset of 13 attributes of interest (out of 27 for the whole CelebA dataset). Attribute injection is performed by concatenating the attribute vector with the encoded feature map before decoding. The attributes, represented as a binary vector (e.g., “smiling” = 1, “beard” = 0), are first reshaped and broadcasted to match the spatial dimensions of the feature map. This injection can occur once at the bottleneck or at multiple decoder layers, by playing on the "inject_layers" parameter.
 
 The model also presents shortcut connections, inspired by U-Net to help preserve fine details during image reconstruction. They link encoder and decoder layers, allowing high-level features from the input image to be skipped over the latent space and reused in the decoder. The number of skipping connections can be modified with the "shortcut_layers" parameters.
 
@@ -52,6 +55,22 @@ A model can be retrained from scratch on the CelebA Dataset using the following 
 ```bash
 python3 train.py --experiment_name your_training --gpu
 ```
-Although we decided to reuse the same default hyperparameters as the paper, they can be changed by specifying them in the previous command (see the python file for the exact syntax)
+Although we decided to reuse the same default hyperparameters as the paper, they can be changed by specifying them in the previous command (see the python file for the exact syntax).
 
-Note: A good GPU is recommended. We trained the model using CentraleSupélec Metz DCE, and training time varied from ∼15 min/epoch for a 24 GB RAM GPU to ∼25 min/epoch for a 11 GB RAM GPU.
+Note: A good GPU is recommended. We trained the model using CentraleSupélec Metz DCE, and training time varied from ∼15 min/epoch for a 24 GB RAM GPU to ∼25 min/epoch for a 11 GB RAM GPU. As the usage of CentraleSupélec's GPUs is constrained, we only trained the model for ∼50 epochs but we recommend going further in training for a better reconstruction of the original images. If you want to submit a long training on the DCE you can use `sbatch train_job.sh`
+
+## Model Testing
+
+### Single attribute editing
+The following commands will test the single attribute editing for every attribute the model was trained on. If you are using our model/default parameters, the attributes are : 
+'Bald', 'Black_Hair', 'Blond_Hair', 'Brown_Hair', 'Bushy_Eyebrows', 'Eyeglasses', 'Male', 'Mouth_Slightly_Open', 'Mustache', 'No_Beard', 'Pale_Skin', 'Smiling', 'Young'.
+
+If you want to use test images from CelebA Dataset, you can type :
+ ```bash
+python3 test.py --experiment_name full_training --gpu
+```
+
+If you want to use custom images, add it in the `./data/custom` folder with a file `list_attr_custom.txt` describing the original attributes of the image (see examples):
+ ```bash
+python3 test.py --custom_img --experiment_name full_training --gpu
+```
