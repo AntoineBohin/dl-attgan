@@ -9,8 +9,11 @@ With the lack of suitable labeled datasets, current approaches rely on generativ
 
 [AttGAN](https://arxiv.org/abs/1711.10678) (Attribute Generative Adversarial Network) introduces an improved framework, leveraging an encoder-decoder structure combined with attribute classification constraints, reconstruction learning and adversarial learning at training. It results in more realistic facial transformations, better retention of details and a more flexible model that can handle multiple attributes simultaneously with a single implementation.
 
-Our custom implementation gave the following results:
+Our custom implementation gave the following results on some test images:
+
 ![](images/results_single_/single_3.jpg)
+From left to right: Input, Reconstruction, Bald, Black Hair, Blond Hair, Brown Hair, Bushy Eyebrows, Eyeglasses, Male, Mouth Slightly Open, Mustache, Beard, Pale Skin, Smiling, Young
+
 
 ## Model Architecture
 
@@ -39,6 +42,8 @@ The model also presents shortcut connections, inspired by U-Net to help preserve
 
 ### Intensity Control
 We explored the model’s capability to generalize beyond binary attribute values and use continuous intensity levels for attribute editing. While AttGAN is originally trained with discrete 0/1 labels, we observed that it can naturally handle gradual attribute modifications during testing, without requiring any architectural changes.
+Some results for the attribute "Smiling":
+
 ![](images/results_intensity_/intensity_smiling_2.jpg)
 
 ## Requirements
@@ -82,8 +87,10 @@ python3 test.py --custom_img --experiment_name full_training --gpu
 ```
 
 Here are some results we obtained :
+
 ![](images/results_single_/single_1.jpg)
 ![](images/results_single_/single_4.jpg)
+From left to right: Input, Reconstruction, Bald, Black Hair, Blond Hair, Brown Hair, Bushy Eyebrows, Eyeglasses, Male, Mouth Slightly Open, Mustache, Beard, Pale Skin, Smiling, Young
 
 ### Attribute intensity editing
 
@@ -94,9 +101,11 @@ You can test this functionality using the provided script. It generates a series
 python3 test_intensity.py --experiment_name test_full_training --test_att Male --gpu
 ```
 
+Some results for the attribute "No Beard":
+
 ![](images/results_intensity_/intensity_beard_1.jpg)
 
-![](images/results_intensity_/intensity_young_1.jpg)
+Some results for the attribute "Young":
 
-![](intensity_batch_example_2.png)
+![](images/results_intensity_/intensity_young_1.jpg)
 
