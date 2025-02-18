@@ -36,6 +36,10 @@ The model was only trained on a subset of 13 attributes of interest (out of 27 f
 
 The model also presents shortcut connections, inspired by U-Net to help preserve fine details during image reconstruction. They link encoder and decoder layers, allowing high-level features from the input image to be skipped over the latent space and reused in the decoder. The number of skipping connections can be modified with the "shortcut_layers" parameters.
 
+### Intensity Control
+We explored the model’s capability to generalize beyond binary attribute values and use continuous intensity levels for attribute editing. While AttGAN is originally trained with discrete 0/1 labels, we observed that it can naturally handle gradual attribute modifications during testing, without requiring any architectural changes.
+![](intensity_batch_example.png)
+
 ## Requirements
 
 Type the following command to install the required modules:
