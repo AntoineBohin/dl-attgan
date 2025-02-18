@@ -62,6 +62,7 @@ Note: A good GPU is recommended. We trained the model using CentraleSupélec Met
 ## Model Testing
 
 ### Single attribute editing
+
 The following commands will test the single attribute editing for every attribute the model was trained on. If you are using our model/default parameters, the attributes are : 
 'Bald', 'Black_Hair', 'Blond_Hair', 'Brown_Hair', 'Bushy_Eyebrows', 'Eyeglasses', 'Male', 'Mouth_Slightly_Open', 'Mustache', 'No_Beard', 'Pale_Skin', 'Smiling', 'Young'.
 
@@ -74,3 +75,14 @@ If you want to use custom images, add it in the `./data/custom` folder with a fi
  ```bash
 python3 test.py --custom_img --experiment_name full_training --gpu
 ```
+
+Here are some results we obtained :
+
+### Attribute intensity editing
+
+We also implemented the possibility to edit the intensity of an attribute. 
+
+ ```bash
+python3 test_intensity.py --test_att Smiling --test_int_min -1.0 --test_int_max 1.0 --n_slide 10 --gpu
+```
+
