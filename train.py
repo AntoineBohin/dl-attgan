@@ -5,8 +5,6 @@ import os
 from os.path import join
 
 import torch.utils.data as data
-
-import torch.utils.data as data
 import torch
 import torchvision.utils as vutils
 from tensorboardX import SummaryWriter
