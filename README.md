@@ -19,7 +19,7 @@ From left to right: Input, Reconstruction, Bald, Black Hair, Blond Hair, Brown 
 
 ### Principles
 
-AttGAN is built upon an encoder-decoder architecture:
+AttGAN is built upon an encoder-decoder architecture: 
 ![](images/model_overview.png)
 
 The model is combined with additional components used during training to learn how to generate realistic and precise edits: 
